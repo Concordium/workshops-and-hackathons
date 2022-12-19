@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Asiavision</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- We use Sakura, a classless CSS framework to make the site look decent -->
+        <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
+
+        <script src="/sdk.js"></script>
+        <script src="/helpers.js"></script>
+
+        <script>
+            let currentAccountAddress = null;
+            let rawModuleSchema = '//8DAQAAAAYAAAB2b3RpbmcBABQAAwAAAAsAAABkZXNjcmlwdGlvbhYCBwAAAG9wdGlvbnMQAhYCCAAAAGVuZF90aW1lDQIAAAAEAAAAdmlldwEUAAMAAAALAAAAZGVzY3JpcHRpb24WAggAAABlbmRfdGltZQ0FAAAAdGFsbHkSAhYCBAQAAAB2b3RlBBYCFQQAAAANAAAAUGFyc2luZ0ZhaWxlZAIOAAAAVm90aW5nRmluaXNoZWQCEwAAAEludmFsaWRWb3RpbmdPcHRpb24CDQAAAENvbnRyYWN0Vm90ZXICAA==';
+
+            let contractIndex = 2295;
+            const moduleReference = new concordiumSDK.ModuleReference('1436a4af71fbc3c1be36a45496369a90da85bae725c6e3badc41f39e95c9dfa7');
+            let client = null;
+
+            function connect() {
+                client.connect().then((accountAddress) => {
+                        currentAccountAddress = accountAddress;
+                        document.getElementById('accountAddress').innerHTML = currentAccountAddress;
+                  });
+            }
+
+            function vote(contractIndex, votingOption) {
+                client
+                    .sendTransaction(
+                        currentAccountAddress,
+                        concordiumSDK.AccountTransactionType.Update,
+                        {
+                            amount: new concordiumSDK.CcdAmount(0n),
+                            contractAddress: {
+                                index: contractIndex,
+                                subindex: 0n,
+                            },
+                            receiveName: 'voting.vote',
+                            maxContractExecutionEnergy: 3000n,
+                        },
+                        votingOption,
+                        rawModuleSchema,
+                    )
+                    .then((msg) => alert(`Successfully sent vote with transaction hash: "${msg}"`))
+                    .catch(alert);
+            }
+
+            function idCheckedVote() {
+                const contractIndex = document.getElementById('votingContractIndex').value;
+                const country = document.getElementById('votingOption').value;
+
+                const statement = new concordiumSDK.IdStatementBuilder()
+                                        .addNonMembership(concordiumSDK.AttributesKeys.countryOfResidence, [country])
+                                        .getStatement();
+                // A challenge is some random value included in the proof so they cannot be reused.
+                // In a real setup we would verify that the proof is valid and includes the challenge.
+                // And we would check that the included challenge is not older than x minutes.
+                const challenge = 'AAAAAAAA';
+                if (currentAccountAddress != null) {
+                    client
+                        .requestIdProof(currentAccountAddress, statement, challenge)
+                        .then((proof) => {
+                            console.log("Got valid ID proof:", proof);
+                            vote(contractIndex, country);
+                        })
+                        .catch((error) => {
+                            console.log("Could not create ID proof:", error);
+                            alert("You cannot vote on your own country! We busted a cheater!");
+                        });
+                } else {
+                    alert("You need to connect first.");
+                }
+            }
+
+            function uploadSchema() {
+                const readFileToBuffer = async (file) => {
+                    let arrayBuffer = await file.arrayBuffer();
+                    return arrayBuffer;
+                };
+
+                let file = document.getElementById('schemaFile').files[0];
+                readFileToBuffer(file).then((schemaBuffer) => {
+                    let base64Schema = btoa(String.fromCharCode(...new Uint8Array(schemaBuffer))).trim();
+                    rawModuleSchema = base64Schema;
+                    document.getElementById('schemaContents').innerHTML = rawModuleSchema;
+                });
+            }
+
+            function setupElection() {
+                const description = document.getElementById('setupElectionDescription').value;
+                // Convert to an ISO string, which includes the timezone.
+                const end_time = new Date(Date.parse(document.getElementById('setupElectionEndtime').value)).toISOString();
+                // Split into a list of strings and trim each element.
+                const options = document.getElementById('setupElectionOptions').value.split(',').map((s) => s.trim());
+
+                client.sendTransaction(
+                    currentAccountAddress,
+                    concordiumSDK.AccountTransactionType.InitContract,
+                    {
+                        amount: new concordiumSDK.CcdAmount(0n),
+                        moduleRef: moduleReference,
+                        initName: "voting",
+                        maxContractExecutionEnergy: 3000n,
+                    },
+                    {
+                    description: description,
+                    options: options,
+                    end_time: end_time
+                    },
+                    rawModuleSchema,
+                    )
+                .then((msg) => alert(`Successfully set up new contest with transaction hash: "${msg}"`))
+                .catch(alert);
+            }
+
+            function viewResult() {
+                const contractIndex = document.getElementById('resultContractIndex').value;
+
+                client.getJsonRpcClient().invokeContract({
+                    contract: { index: BigInt(contractIndex), subindex: BigInt(0) },
+                    method: 'voting.view',
+                })
+                .then((viewResult) => {
+                    let returnValue = concordiumSDK.deserializeReceiveReturnValue(
+                        concordiumSDK.toBuffer(viewResult.returnValue, 'hex'),
+                        concordiumSDK.toBuffer(rawModuleSchema, 'base64'),
+                        "voting",
+                        "view", // NOTE: Here it is just the entrypoint name, i.e. the contract name is not prepended.
+                        concordiumSDK.SchemaVersion.V2
+                    );
+                    document.getElementById('resultDescription').value = returnValue.description;
+                    document.getElementById('resultEndtime').value = returnValue.end_time;
+                    // Making the tally slightly prettier.
+                    const tally = returnValue.tally.map((r) => r[0] + ": " + r[1]);
+                    document.getElementById('resultTally').innerHTML = tally;
+                })
+                .catch(alert);
+            }
+
+            function setupPage() {
+                // Get the client.
+                concordiumHelpers.detectConcordiumProvider()
+                                 .then((c) => client = c)
+                                 .catch(alert);
+
+                // Set default values.
+                document.getElementById('votingContractIndex').value = contractIndex;
+                document.getElementById('resultContractIndex').value = contractIndex;
+                document.getElementById('schemaContents').innerHTML = rawModuleSchema;
+            }
+
+            // Set up the page when the DOM is loaded.
+            addEventListener("DOMContentLoaded", (_) => setupPage());
+        </script>
+
+    </head>
+    <body>
+        <article>
+        <h1>AsiaVision</h1>
+
+            <section>
+                <p><b>Connected to account: </b><br /><em id="accountAddress">None</em></p>
+                <button onclick="connect()">Connect</button>
+            </section>
+
+            <section>
+                <h2>Upload schema</h2>
+                <input type="file", id="schemaFile" /><br />
+                <button onclick="uploadSchema()">Upload schema</button><br />
+                <label>Schema:<pre><code id="schemaContents"></code></pre></label>
+            </section>
+
+            <section>
+                <h2>Set up a new song contest</h2>
+                <p>Enter countries in a comma-separated list:</p>
+                <label>Description:<br /><input type="text" placeholder="Song contest for..." value="Asiavision" id="setupElectionDescription" /></label>
+                <label>Endtime:<br /><input type="datetime-local" value="2023-01-08T20:00" id="setupElectionEndtime" /></label>
+                <label>Country codes (comma-separated):<textarea placeholder="IN, DK, DE" id="setupElectionOptions">IN, DK, DE</textarea></label>
+                <button onclick="setupElection()">Create new contest</button>
+            </section>
+
+            <section>
+                <h2>Voting!</h2>
+                <label>Contract index:<br /><input type="number" min="0" id="votingContractIndex" /></label>
+                <label>Vote for:<br /><input type="text" id="votingOption" /></label>
+                <button onclick="idCheckedVote()">Vote!</button>
+            </section>
+
+            <section>
+                <h2>Results</h2>
+                <label>Contract index:<br /><input type="number" min="0" id="resultContractIndex" /></label>
+                <button onclick="viewResult()">Get results</button>
+                <br />
+                <label>Description:<br /><input disabled id="resultDescription" /></label>
+                <label>Endtime:<br /><input disabled id="resultEndtime" /></label>
+                <label>Tally:<br /><textarea disabled id="resultTally"></textarea></label>
+            </section>
+
+        </article>
+    </body>
+</html>
