@@ -5,6 +5,17 @@ in 2023.
 
 It has two parts, a smart contract and a dApp.
 
+## Prerequisites
+
+- [The Rust programming language](https://www.rust-lang.org/tools/install) version 1.53+
+- [NodeJS and NPM](https://nodejs.org/en/)
+- [Cargo
+  Concordium](https://developer.concordium.software/en/mainnet/net/installation/downloads-testnet.html#cargo-concordium-v2-5-0)
+  version 2.5.0
+- [Concordium
+  Client](https://developer.concordium.software/en/mainnet/net/installation/downloads-testnet.html#concordium-client-v5-0-2)
+  version 5.0.2
+
 ## Smart contract instructions
 
 1. Open the `smart-contract/` folder in a terminal.
