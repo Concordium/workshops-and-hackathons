@@ -15,11 +15,16 @@
 
         <script>
             let currentAccountAddress = null;
-            let rawModuleSchema = '//8DAQAAAAYAAAB2b3RpbmcBABQAAwAAAAsAAABkZXNjcmlwdGlvbhYCBwAAAG9wdGlvbnMQAhYCCAAAAGVuZF90aW1lDQIAAAAEAAAAdmlldwEUAAMAAAALAAAAZGVzY3JpcHRpb24WAggAAABlbmRfdGltZQ0FAAAAdGFsbHkSAhYCBAQAAAB2b3RlBBYCFQQAAAANAAAAUGFyc2luZ0ZhaWxlZAIOAAAAVm90aW5nRmluaXNoZWQCEwAAAEludmFsaWRWb3RpbmdPcHRpb24CDQAAAENvbnRyYWN0Vm90ZXICAA==';
+            let client = null;
 
             let contractIndex = 2295;
-            const moduleReference = new concordiumSDK.ModuleReference('1436a4af71fbc3c1be36a45496369a90da85bae725c6e3badc41f39e95c9dfa7');
-            let client = null;
+
+            // Get the schema with the following command:
+            // cargo concordium build --schema-base64-out -
+            let rawModuleSchema = '//8DAQAAAAYAAAB2b3RpbmcBABQAAwAAAAsAAABkZXNjcmlwdGlvbhYCBwAAAG9wdGlvbnMQAhYCCAAAAGVuZF90aW1lDQIAAAAEAAAAdmlldwEUAAMAAAALAAAAZGVzY3JpcHRpb24WAggAAABlbmRfdGltZQ0FAAAAdGFsbHkSAhYCBAQAAAB2b3RlBBYCFQQAAAANAAAAUGFyc2luZ0ZhaWxlZAIOAAAAVm90aW5nRmluaXNoZWQCEwAAAEludmFsaWRWb3RpbmdPcHRpb24CDQAAAENvbnRyYWN0Vm90ZXICAA';
+            // Get the module reference with the following command:
+            // concordium-client module deploy ./voting_contract.wasm.v1 --sender <AccountAddress>
+            const moduleReference = new concordiumSDK.ModuleReference('0f3f4bc70386aed412d3d3e2fc01ad390524e343872db7cfcccc5cd935532124');
 
             function connect() {
                 client.connect().then((accountAddress) => {
