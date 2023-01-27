@@ -1,7 +1,7 @@
-# Concordium @ SheBuilds Hackathon
+# Concordium Hackathon Workshop Material
 
-This repository contains the code used in a workshop for the SheBuilds Hackathon
-in 2023.
+This repository contains the code used in Concordium's workshops at hackathons
+in 2023. The workshop builds a voting application and showcases the identity feature of the Concordium blockchain.
 
 It has two parts, a smart contract and a dApp.
 
@@ -27,26 +27,26 @@ It has two parts, a smart contract and a dApp.
 3. You can also run the tests with Cargo concordium: `$ cargo concordium test`.
 4. Deploy the smart contract to the chain with [Concordium Client](https://developer.concordium.software/en/mainnet/net/installation/downloads-testnet.html#concordium-client-v5-0-2):
    - ```
-     concordium-client --grpc-ip shebuilds.concordium.com module deploy voting.wasm.v1 --sender ACCOUNT_ADDRESS --name voting-contract-module
+     concordium-client --grpc-ip node.testnet.concordium.com module deploy voting.wasm.v1 --sender ACCOUNT_ADDRESS --name voting-contract-module
      ```
-   - Note that concordium-cleint is communicating with the node located at `shebuilds.concordium.com`.
+   - Note that concordium-cleint is communicating with the node located at `node.testnet.concordium.com`.
    - Also note that we are adding a local name to the module: `voting-contract-module`.
 5. Initialize the smart contract from the module:
    - ```
-     concordium-client --grpc-ip shebuilds.concordium.com contract init voting-contract-module --contract voting --parameter-json init-parameter.json     --sender ACCOUNT_ADDRESS --energy 10000 --name voting-contract
+     concordium-client --grpc-ip node.testnet.concordium.com contract init voting-contract-module --contract voting --parameter-json init-parameter.json --sender ACCOUNT_ADDRESS --energy 10000 --name voting-contract
      ```
    - Note that we are using the json file `init-parameter.json` as input.
    - Also note that we are adding a local name to the instance: `voting-contract`.
 6. Update the contract (vote):
    - ```
-     concordium-client --grpc-ip shebuilds.concordium.com contract update voting-contract --entrypoint vote --parameter-json vote-parameter.json --sender ACCOUNT_ADDRESS --energy 10000
+     concordium-client --grpc-ip node.testnet.concordium.com contract update voting-contract --entrypoint vote --parameter-json vote-parameter.json --sender ACCOUNT_ADDRESS --energy 10000
      ```
    - Note that we are calling the `vote` entrypoint (method) on the smart
      contract instance.
    - Also note that we are using the json file `vote-parameter.json` as input.
 7. View the voting results:
    - ```
-     concordium-client --grpc-ip shebuilds.concordium.com contract invoke voting-contract --entrypoint view
+     concordium-client --grpc-ip node.testnet.concordium.com contract invoke voting-contract --entrypoint view
      ```
    - Note that this is _not_ a transaction, so we do not need to provide an
      energy limit or a sender account to pay.
@@ -56,8 +56,7 @@ It has two parts, a smart contract and a dApp.
 For more information, tutorials, guides etc. see our [developer documentation](https://developer.concordium.software/).
 If you get stuck, reach out to us on:
 
-- The Concordium channels on the [SheBuilds Discord](https://discord.com/invite/ftkUA6cWWY).
-- Or, on our [support forum](https://support.concordium.software).
+- The Concordium [software support channels](https://support.concordium.software).
 
 ## dApp instructions
 
