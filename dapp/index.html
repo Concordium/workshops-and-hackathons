@@ -33,6 +33,33 @@
             });
         }
 
+        function setupElection() {
+            const description = document.getElementById('setupElectionDescription').value;
+            // Convert to an ISO string, which includes the timezone.
+            const end_time = new Date(Date.parse(document.getElementById('setupElectionEndtime').value)).toISOString();
+            // Split into a list of strings and trim each element.
+            const options = document.getElementById('setupElectionOptions').value.split(',').map((s) => s.trim());
+
+            client.sendTransaction(
+                currentAccountAddress,
+                concordiumSDK.AccountTransactionType.InitContract,
+                {
+                    amount: new concordiumSDK.CcdAmount(0n),
+                    moduleRef: moduleReference,
+                    initName: "voting",
+                    maxContractExecutionEnergy: 3000n,
+                },
+                {
+                    description: description,
+                    options: options,
+                    end_time: end_time
+                },
+                rawModuleSchema,
+            )
+                .then((msg) => alert(`Successfully set up new contest with transaction hash: "${msg}"`))
+                .catch(alert);
+        }
+
         function vote() {
             const contractIndex = document.getElementById('votingContractIndex').value;
             const votingOption = document.getElementById('votingOption').value;
@@ -82,33 +109,6 @@
             } else {
                 alert("You need to connect first.");
             }
-        }
-
-        function setupElection() {
-            const description = document.getElementById('setupElectionDescription').value;
-            // Convert to an ISO string, which includes the timezone.
-            const end_time = new Date(Date.parse(document.getElementById('setupElectionEndtime').value)).toISOString();
-            // Split into a list of strings and trim each element.
-            const options = document.getElementById('setupElectionOptions').value.split(',').map((s) => s.trim());
-
-            client.sendTransaction(
-                currentAccountAddress,
-                concordiumSDK.AccountTransactionType.InitContract,
-                {
-                    amount: new concordiumSDK.CcdAmount(0n),
-                    moduleRef: moduleReference,
-                    initName: "voting",
-                    maxContractExecutionEnergy: 3000n,
-                },
-                {
-                    description: description,
-                    options: options,
-                    end_time: end_time
-                },
-                rawModuleSchema,
-            )
-                .then((msg) => alert(`Successfully set up new contest with transaction hash: "${msg}"`))
-                .catch(alert);
         }
 
         function viewResult() {
