@@ -21,43 +21,43 @@
 use concordium_std::{collections::BTreeMap, *};
 
 /// The human-readable description of a voting option.
-type VotingOption = String;
+pub type VotingOption = String;
 /// The voting options are stored in a vector. The vector index is used to refer
 /// to a specific voting option.
-type VoteIndex = u32;
+pub type VoteIndex = u32;
 /// Number of votes.
-type VoteCount = u32;
+pub type VoteCount = u32;
 
 /// The parameter type for the contract function `init`.
 /// Takes a description, the voting options, and the `end_time` to start the
 /// election.
-#[derive(Deserial, SchemaType)]
-struct InitParameter {
+#[derive(Serialize, SchemaType)]
+pub struct InitParameter {
     /// The description of the election.
-    description: String,
+    pub description: String,
     /// A vector of all voting options.
-    options: Vec<VotingOption>,
+    pub options: Vec<VotingOption>,
     /// The last timestamp that an account can vote.
     /// The election is open from the point in time that this smart contract is
     /// initialized until the `end_time`.
-    end_time: Timestamp,
+    pub end_time: Timestamp,
 }
 
 /// The `return_value` type of the contract function `view`.
 /// Returns a description, the `end_time`, the voting options as a vector, and
 /// the number of voting options of the current election.
 /// Also returns the tally of votes.
-#[derive(Serial, Deserial, SchemaType)]
-struct VotingView {
+#[derive(Serialize, SchemaType)]
+pub struct VotingView {
     /// The description of the election.
-    description: String,
+    pub description: String,
     /// The last timestamp that an account can vote.
     /// The election is open from the point in time that this smart contract is
     /// initialized until the `end_time`.
-    end_time: Timestamp,
+    pub end_time: Timestamp,
     /// The map connects the index of a voting option to the number of votes
     /// it received so far.
-    tally: BTreeMap<VotingOption, VoteCount>,
+    pub tally: BTreeMap<VotingOption, VoteCount>,
 }
 
 /// The contract state
@@ -76,8 +76,8 @@ struct State {
 }
 
 /// The different errors that the `vote` function can produce.
-#[derive(Reject, Serial, PartialEq, Eq, Debug, SchemaType)]
-enum VotingError {
+#[derive(Reject, Serialize, PartialEq, Eq, Debug, SchemaType)]
+pub enum VotingError {
     /// Raised when parsing the parameter failed.
     #[from(ParseError)]
     ParsingFailed,
@@ -92,7 +92,7 @@ enum VotingError {
 
 /// A custom alias type for the `Result` type with the error type fixed to
 /// `VotingError`.
-type VotingResult<T> = Result<T, VotingError>;
+pub type VotingResult<T> = Result<T, VotingError>;
 
 // Contract functions
 
@@ -196,219 +196,4 @@ fn view<S: HasStateApi>(
         end_time,
         tally,
     })
-}
-
-// Tests
-
-#[concordium_cfg_test]
-mod tests {
-    use super::*;
-    use concordium_std::test_infrastructure::*;
-
-    // Test accounts/addresses.
-    const ACC_0: AccountAddress = AccountAddress([0; 32]);
-    const ACC_1: AccountAddress = AccountAddress([1; 32]);
-    const ADDR_ACC_0: Address = Address::Account(ACC_0);
-    const ADDR_ACC_1: Address = Address::Account(ACC_1);
-
-    // Set up the test host.
-    fn make_test_host(options: Vec<String>, end_time: Timestamp) -> TestHost<State> {
-        let state_builder = TestStateBuilder::new();
-
-        let state = State {
-            description: String::from("Test description"),
-            ballots: BTreeMap::new(),
-            end_time,
-            options,
-        };
-        TestHost::new(state, state_builder)
-    }
-
-    /// Test that an account cannot vote if it is past the `end_time` of the
-    /// election.
-    #[concordium_test]
-    fn test_vote_after_finish_time() {
-        // Set up the context.
-        let end_time = Timestamp::from_timestamp_millis(100);
-        let current_time = Timestamp::from_timestamp_millis(200);
-        let mut ctx = TestReceiveContext::empty();
-        ctx.set_metadata_slot_time(current_time);
-
-        // Set up the test host.
-        let mut host = make_test_host(Vec::new(), end_time);
-
-        // Call the contract function.
-        let res = vote(&ctx, &mut host);
-
-        // Check that error is thrown because the election is finished already.
-        claim_eq!(
-            res,
-            Err(VotingError::VotingFinished),
-            "Should throw error because voting is finished"
-        );
-    }
-
-    /// Test that voting fails if the voting index is out of range.
-    #[concordium_test]
-    fn test_vote_with_invalid_index() {
-        // Set up the context.
-        let end_time = Timestamp::from_timestamp_millis(100);
-        let current_time = Timestamp::from_timestamp_millis(0);
-        let mut ctx = TestReceiveContext::empty();
-        ctx.set_metadata_slot_time(current_time);
-        ctx.set_sender(ADDR_ACC_0);
-
-        // Set up the parameter.
-        let vote_parameter = to_bytes(&"C");
-        ctx.set_parameter(&vote_parameter);
-
-        // Set up the test host.
-        let mut host = make_test_host(vec!["A".into(), "B".into()], end_time);
-
-        // Call the contract function.
-        let res = vote(&ctx, &mut host);
-
-        // Check that error is thrown because the voting index is out of range.
-        claim_eq!(
-            res,
-            Err(VotingError::InvalidVotingOption),
-            "Should throw error because voting option is invalid"
-        );
-    }
-
-    #[concordium_test]
-    fn test_vote_with_valid_index() {
-        // Set up the context.
-        let end_time = Timestamp::from_timestamp_millis(100);
-        let current_time = Timestamp::from_timestamp_millis(0);
-        let mut ctx = TestReceiveContext::empty();
-        ctx.set_metadata_slot_time(current_time);
-
-        // Vote once.
-
-        // Set up the parameter.
-        let vote_parameter = to_bytes(&"A");
-        ctx.set_parameter(&vote_parameter);
-        // Set up the sender.
-        ctx.set_sender(ADDR_ACC_0);
-        // Set up the test host.
-        let mut host = make_test_host(vec!["A".into(), "B".into()], end_time);
-        // Call the contract function.
-        let result = vote(&ctx, &mut host);
-        // Check the result.
-        claim!(result.is_ok(), "Results in rejection");
-        // Check the ballots (ACCOUNT_0 voted for voting option index 0).
-        let ballots = host
-            .state()
-            .ballots
-            .iter()
-            .map(|(a, b)| (*a, *b))
-            .collect::<Vec<_>>();
-        let tally = view(&ctx, &mut host)
-            .expect("View entrypoint should work")
-            .tally;
-        let votes_count_0 = tally.get("A").unwrap();
-        let votes_count_1 = tally.get("B");
-        claim_eq!(*votes_count_0, 1, "Expect: one vote for option 0");
-        claim!(votes_count_1.is_none(), "Expect: no votes for option 1");
-        claim_eq!(
-            vec![(ACC_0, 0)],
-            ballots,
-            "Expect: ACCOUNT_0 voted for voting option index 0"
-        );
-
-        // Change vote.
-
-        // Set up the parameter.
-        let vote_parameter = to_bytes(&"B");
-        ctx.set_parameter(&vote_parameter);
-        // Call the contract function.
-        let result = vote(&ctx, &mut host);
-        // Check the result.
-        claim!(result.is_ok(), "Results in rejection");
-        // Check the ballots (ACCOUNT_0 changed its voting option index to 1).
-        let ballots = host
-            .state()
-            .ballots
-            .iter()
-            .map(|(a, b)| (*a, *b))
-            .collect::<Vec<_>>();
-        let tally = view(&ctx, &mut host)
-            .expect("View entrypoint should work")
-            .tally;
-        let votes_count_0 = tally.get("A");
-        let votes_count_1 = tally.get("B").unwrap();
-        claim!(votes_count_0.is_none(), "Expect: no votes for option 0");
-        claim_eq!(*votes_count_1, 1, "Expect: one vote for option 1");
-        claim_eq!(
-            vec![(ACC_0, 1)],
-            ballots,
-            "Expect: ACCOUNT_0 changed its voting option index to 1"
-        );
-
-        // Another vote, by another account.
-
-        // Set up the parameter.
-        let vote_parameter = to_bytes(&"A");
-        ctx.set_parameter(&vote_parameter);
-        // Set up the sender.
-        ctx.set_sender(ADDR_ACC_1);
-        // Call the contract function.
-        let result = vote(&ctx, &mut host);
-        // Check the result.
-        claim!(result.is_ok(), "Results in rejection");
-        // Check the ballots (ACCOUNT_0 voted for voting option index 1 and ACCOUNT_1
-        // voted for voting option index 0).
-        let ballots = host
-            .state()
-            .ballots
-            .iter()
-            .map(|(a, b)| (*a, *b))
-            .collect::<Vec<_>>();
-        let tally = view(&ctx, &mut host)
-            .expect("View entrypoint should work")
-            .tally;
-        let votes_count_0 = tally.get("A").unwrap();
-        let votes_count_1 = tally.get("B").unwrap();
-        claim_eq!(*votes_count_0, 1, "Expect: one vote for option 0");
-        claim_eq!(*votes_count_1, 1, "Expect: one vote for option 1");
-        claim_eq!(
-            vec![(ACC_0, 1), (ACC_1, 0)],
-            ballots,
-            "Expect: ACCOUNT_0 voted for voting option index 1 and ACCOUNT_1 voted for voting \
-             option index 0"
-        );
-
-        // Vote again, using the same index as before.
-
-        // Set up the parameter.
-        let vote_parameter = to_bytes(&"B");
-        ctx.set_parameter(&vote_parameter);
-        ctx.set_sender(ADDR_ACC_0);
-        // Call the contract function.
-        let result = vote(&ctx, &mut host);
-        // Check the result.
-        claim!(result.is_ok(), "Results in rejection");
-        // Check the ballots (ACCOUNT_0 still voted for voting option index 1 and
-        // ACCOUNT_1 still voted for voting option index 0).
-        let ballots = host
-            .state()
-            .ballots
-            .iter()
-            .map(|(a, b)| (*a, *b))
-            .collect::<Vec<_>>();
-        let tally = view(&ctx, &mut host)
-            .expect("View entrypoint should work")
-            .tally;
-        let votes_count_0 = tally.get("A").unwrap();
-        let votes_count_1 = tally.get("B").unwrap();
-        claim_eq!(*votes_count_0, 1, "Expect: one vote for option 0");
-        claim_eq!(*votes_count_1, 1, "Expect: one vote for option 1");
-        claim_eq!(
-            vec![(ACC_0, 1), (ACC_1, 0)],
-            ballots,
-            "ACCOUNT_0 still voted for voting option index 1 and ACCOUNT_1 still voted for voting \
-             option index 0"
-        );
-    }
 }
