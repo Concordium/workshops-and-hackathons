@@ -5,6 +5,8 @@ in 2023. The workshop builds a voting application and showcases the identity fea
 
 It has two parts, a smart contract and a dApp.
 
+Note: There is also a more "advanced" version of the system, which exists in the `/advanced` folder. You can read more about it [below](#advanced-version)
+
 ## Prerequisites
 
 - [The Rust programming language](https://www.rust-lang.org/tools/install) version 1.53+
@@ -83,3 +85,11 @@ endings on unix systems.
 However, it is possible to use `yarn`, but you need to fix the line endings
 before it will work.
 This guide explains how to fix the line endings on macOS: https://techtalkbook.com/env-noder-no-such-file-or-directory/
+
+## Advanced version
+
+The advanced version living in `/advanced` includes modified versions of the dApp and smart contract along with a "verifier backend", which the dApp sends the proof to for verification.
+The backend returns a signature if the verification succeeds, and this signature must then be included when calling the `vote` entrypoint on the smart contract, 
+which checks that the signature is valid.
+These extra steps ensure that the smart contract itself can check that the voter account is eligible for voting, i.e. that the account does not live in the country being voted for.
+In the simple version, the check only occurs in the frontend, and so, you can circumvent it by calling the contract directly with e.g. concordium-client.
