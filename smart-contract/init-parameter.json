@@ -1,5 +1,5 @@
 {
-    "description": "The awesome Asiavision song contest",
-    "options": ["IN", "DK", "GE"],
-    "end_time": "2023-10-12T05:05:05.05Z"
+    "description": "The Concordium song contest",
+    "options": ["IT", "DK", "DE"],
+    "end_time": "2023-12-12T00:00:00.00Z"
 }

@@ -13,6 +13,9 @@
 //!  - `vote` for one of the voting options;
 //!  - `view` general information about the election and the tally.
 //!
+//! # Tests
+//! The tests exist in the `./tests/tests.rs` file.
+//!
 //! Note: Vec<VotingOption> (among other variables) is an input parameter to the
 //! `init` function. Since there is a limit to the parameter size (65535 Bytes),
 //! the size of the Vec<VotingOption> is limited.

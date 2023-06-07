@@ -19,7 +19,7 @@ const CHRISTMAS_EVE_EPOCH: u64 = 1701873444000;
 /// Helper function that sets up a chain, account, and initialized contract.
 /// The contract is initialized with:
 ///  - `end_time` = `CHRISTMAS_EVE_EPOCH`
-///  - `options` = ["DK", "GE", "IT"]
+///  - `options` = ["DK", "DE", "IT"]
 fn setup_chain_and_contract(block_time: Timestamp) -> (Chain, ContractInitSuccess) {
     // Setup the test chain struct.
     let mut chain = Chain::new_with_time(block_time);
@@ -49,7 +49,7 @@ fn setup_chain_and_contract(block_time: Timestamp) -> (Chain, ContractInitSucces
                 init_name: OwnedContractName::new_unchecked(String::from("init_voting")),
                 param: OwnedParameter::from_serial(&InitParameter {
                     description: String::from("Concordium EuroVision"),
-                    options: vec![String::from("DK"), String::from("GE"), String::from("IT")],
+                    options: vec![String::from("DK"), String::from("DE"), String::from("IT")],
                     end_time: Timestamp::from_timestamp_millis(CHRISTMAS_EVE_EPOCH), // Noon on Christmas eve.
                 })
                 .expect("Valid parameter size"),
@@ -78,7 +78,7 @@ fn test_vote_after_end_time() {
                 amount: Amount::zero(),
                 address: initialization.contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(String::from("voting.vote")),
-                message: OwnedParameter::from_serial(&VotingOption::from("GE"))
+                message: OwnedParameter::from_serial(&VotingOption::from("DE"))
                     .expect("Parameter has valid length"),
             },
         )
@@ -146,7 +146,7 @@ fn test_valid_voting_with_multiple_accounts() {
                 amount: Amount::zero(),
                 address: initialization.contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(String::from("voting.vote")),
-                message: OwnedParameter::from_serial(&VotingOption::from("GE")) // Voting on Germany.
+                message: OwnedParameter::from_serial(&VotingOption::from("DE")) // Voting on Germany.
                     .expect("Parameter has valid length"),
             },
         )
@@ -171,7 +171,7 @@ fn test_valid_voting_with_multiple_accounts() {
     // There is only a single entry.
     assert_eq!(voting_view_0.tally.len(), 1);
     // There is one vote on Germany.
-    assert_eq!(voting_view_0.tally.get("GE"), Some(&1));
+    assert_eq!(voting_view_0.tally.get("DE"), Some(&1));
 
     // ACC_1 votes on Denmark.
     chain
@@ -207,7 +207,7 @@ fn test_valid_voting_with_multiple_accounts() {
     // There are now two entries.
     assert_eq!(voting_view_1.tally.len(), 2);
     // There is one vote on Germany.
-    assert_eq!(voting_view_1.tally.get("GE"), Some(&1));
+    assert_eq!(voting_view_1.tally.get("DE"), Some(&1));
     // .. And one vote on Denmark.
     assert_eq!(voting_view_1.tally.get("DK"), Some(&1));
 
