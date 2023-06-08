@@ -1,5 +1,6 @@
 {
     "description": "The Concordium song contest",
     "options": ["IT", "DK", "DE"],
-    "end_time": "2023-12-12T00:00:00.00Z"
+    "end_time": "2023-12-24T12:00:00.00Z",
+    "verifier_public_key": "024e25fd6bbc3bbf666c32734b46497b55ac918780425dd290dc3976c7d7e256"
 }
