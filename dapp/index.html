@@ -23,7 +23,7 @@
         let rawModuleSchema = '//8DAQAAAAYAAAB2b3RpbmcBABQAAwAAAAsAAABkZXNjcmlwdGlvbhYCBwAAAG9wdGlvbnMQAhYCCAAAAGVuZF90aW1lDQIAAAAEAAAAdmlldwEUAAMAAAALAAAAZGVzY3JpcHRpb24WAggAAABlbmRfdGltZQ0FAAAAdGFsbHkSAhYCBAQAAAB2b3RlBBYCFQQAAAANAAAAUGFyc2luZ0ZhaWxlZAIOAAAAVm90aW5nRmluaXNoZWQCEwAAAEludmFsaWRWb3RpbmdPcHRpb24CDQAAAENvbnRyYWN0Vm90ZXICAA==';
 
         // Get the module reference with the following command:
-        // concordium-client module deploy ./voting_contract.wasm.v1 --sender <AccountAddress> --grpc-port 10000 --grpc-ip node.testnet.concordium.com
+        // concordium-client module deploy ./voting_contract.wasm.v1 --sender <AccountAddress> --grpc-ip node.testnet.concordium.com
         const moduleReference = new concordiumSDK.ModuleReference('0f3f4bc70386aed412d3d3e2fc01ad390524e343872db7cfcccc5cd935532124');
 
         function connect() {
