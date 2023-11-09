@@ -103,10 +103,7 @@ pub type VotingResult<T> = Result<T, VotingError>;
 /// A description, the vector of all voting options, and an `end_time`
 /// have to be provided.
 #[init(contract = "voting", parameter = "InitParameter")]
-fn init<S: HasStateApi>(
-    ctx: &impl HasInitContext,
-    _state_builder: &mut StateBuilder<S>,
-) -> InitResult<State> {
+fn init(ctx: &InitContext, _state_builder: &mut StateBuilder) -> InitResult<State> {
     // Parse the parameter.
     let param: InitParameter = ctx.parameter_cursor().get()?;
 
@@ -134,10 +131,7 @@ fn init<S: HasStateApi>(
     parameter = "VotingOption",
     error = "VotingError"
 )]
-fn vote<S: HasStateApi>(
-    ctx: &impl HasReceiveContext,
-    host: &mut impl HasHost<State, StateApiType = S>,
-) -> VotingResult<()> {
+fn vote(ctx: &ReceiveContext, host: &mut Host<State>) -> VotingResult<()> {
     // Check that the election hasn't finished yet.
     if ctx.metadata().slot_time() > host.state().end_time {
         return Err(VotingError::VotingFinished);
@@ -169,10 +163,7 @@ fn vote<S: HasStateApi>(
 
 /// Get the election information.
 #[receive(contract = "voting", name = "view", return_value = "VotingView")]
-fn view<S: HasStateApi>(
-    _ctx: &impl HasReceiveContext,
-    host: &impl HasHost<State, StateApiType = S>,
-) -> ReceiveResult<VotingView> {
+fn view(_ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<VotingView> {
     // Get information from the state.
     let description = host.state().description.clone();
     let end_time = host.state().end_time;

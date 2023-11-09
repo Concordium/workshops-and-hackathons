@@ -1,7 +1,7 @@
 //! This module contains integration tests for the voting contract.
 //!
 //! The best way to run these tests are with `cargo concordium test --out concordium-out/module.wasm.v1`
-//! as that will make sure to compile the module before running the tests.
+//! as that will make sure to compile the smart contract module before running the tests.
 
 use concordium_smart_contract_testing::*;
 use concordium_std::Timestamp;
@@ -83,11 +83,10 @@ fn test_vote_after_end_time() {
             },
         )
         .expect_err("Vote fails");
-    // Get the return value by unwrapping the `Option`.
-    let return_value = update.return_value().expect("A value should be returned");
-    // Deserialize it into a `VotingError`.
-    let error: VotingError =
-        from_bytes(&return_value).expect("Return value should be a VotingError.");
+    // Parse the returned error.
+    let error: VotingError = update
+        .parse_return_value()
+        .expect("Return value should be a `VotingError`");
     // Check that it failed for the right reason.
     assert_eq!(error, VotingError::VotingFinished);
 }
@@ -114,11 +113,10 @@ fn test_vote_on_unknown_option_fails() {
             },
         )
         .expect_err("Vote fails");
-    // Get the return value by unwrapping the `Option`.
-    let return_value = update.return_value().expect("A value should be returned");
-    // Deserialize it into a `VotingError`.
-    let error: VotingError =
-        from_bytes(&return_value).expect("Return value should be a VotingError.");
+    // Parse the returned error.
+    let error: VotingError = update
+        .parse_return_value()
+        .expect("Return value should be a `VotingError`");
     // Check that it failed for the right reason.
     assert_eq!(error, VotingError::InvalidVotingOption);
 }
@@ -166,8 +164,9 @@ fn test_valid_voting_with_multiple_accounts() {
             },
         )
         .expect("Invoke succeeds.");
-    let voting_view_0: VotingView =
-        from_bytes(&view_0.return_value).expect("Return value should be a VotingView");
+    let voting_view_0: VotingView = view_0
+        .parse_return_value()
+        .expect("Return values should be a `VotingView`");
     // There is only a single entry.
     assert_eq!(voting_view_0.tally.len(), 1);
     // There is one vote on Germany.
@@ -202,8 +201,9 @@ fn test_valid_voting_with_multiple_accounts() {
             },
         )
         .expect("Invoke succeeds.");
-    let voting_view_1: VotingView =
-        from_bytes(&view_1.return_value).expect("Return value should be a VotingView");
+    let voting_view_1: VotingView = view_1
+        .parse_return_value()
+        .expect("Return values should be a `VotingView`");
     // There are now two entries.
     assert_eq!(voting_view_1.tally.len(), 2);
     // There is one vote on Germany.
@@ -240,8 +240,9 @@ fn test_valid_voting_with_multiple_accounts() {
             },
         )
         .expect("Invoke succeeds.");
-    let voting_view_2: VotingView =
-        from_bytes(&view_2.return_value).expect("Return value should be a VotingView");
+    let voting_view_2: VotingView = view_2
+        .parse_return_value()
+        .expect("Return values should be a `VotingView`");
     // There is only one entry again.
     assert_eq!(voting_view_2.tally.len(), 1);
     // There are two votes on Denmark.
